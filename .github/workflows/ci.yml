@@ -42,7 +42,7 @@ jobs:
           pip install "greenlet>=3.0.0" "moto[s3]>=5.0.0" pytest pytest-asyncio httpx
           pip install -r backend/requirements.txt
 
-      - name: Initialize Database Schema
+      - name: Initialize Database Schema and RLS
         env:
           DATABASE_URL: postgresql+asyncpg://ryker_app_user:SecureClientAppPass123!@localhost:5432/ryker_vault
           POSTGRES_USER: ryker_app_user
@@ -57,11 +57,21 @@ jobs:
           cd backend
           python -c "
           import asyncio
+          from sqlalchemy import text
           from app.core.database import engine
           from app.models.audit import Base
+
           async def init():
               async with engine.begin() as conn:
                   await conn.run_sync(Base.metadata.create_all)
+                  await conn.execute(text('''
+                      ALTER TABLE engagements ENABLE ROW LEVEL SECURITY;
+                      ALTER TABLE engagements FORCE ROW LEVEL SECURITY;
+                      DROP POLICY IF EXISTS tenant_isolation_policy ON engagements;
+                      CREATE POLICY tenant_isolation_policy ON engagements
+                          USING (organization_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid)
+                          WITH CHECK (organization_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
+                  '''))
           asyncio.run(init())
           "
 
