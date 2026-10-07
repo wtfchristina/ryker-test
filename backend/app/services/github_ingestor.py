@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 from app.services.vault import EvidenceVaultService
 
+GITHUB_APP_SERVICE_ACCOUNT = uuid.UUID("22222222-2222-2222-2222-222222222222")
+
 class GitHubWebhookService:
     @staticmethod
     def verify_signature(payload_body: bytes, signature_header: Optional[str], secret: Optional[str] = None) -> bool:
@@ -30,7 +32,7 @@ class GitHubWebhookService:
         organization_id: uuid.UUID,
         engagement_id: uuid.UUID,
         control_id: uuid.UUID,
-        uploaded_by: str = "service_account:github_app",
+        uploaded_by: Optional[uuid.UUID] = None,
     ) -> Optional[Dict[str, Any]]:
         action = event_data.get("action")
         pr = event_data.get("pull_request", {})
@@ -38,6 +40,8 @@ class GitHubWebhookService:
 
         if action != "closed" or not merged:
             return None
+
+        uploader_id = uploaded_by or GITHUB_APP_SERVICE_ACCOUNT
 
         pr_evidence = {
             "evidence_type": "PULL_REQUEST_MERGE_AUDIT_TRAIL",
@@ -65,7 +69,7 @@ class GitHubWebhookService:
         file_name = f"github_pr_{pr.get('number', 'unknown')}_audit_trail.json"
 
         vault = EvidenceVaultService()
-        result = vault.seal_evidence_payload(
+        return vault.seal_evidence_payload(
             organization_id=organization_id,
             engagement_id=engagement_id,
             control_id=control_id,
@@ -73,7 +77,5 @@ class GitHubWebhookService:
             source_name="github_webhook_pipeline",
             file_name=file_name,
             raw_bytes=raw_bytes,
-            uploaded_by=uploaded_by,
+            uploaded_by=uploader_id,
         )
-
-        return result

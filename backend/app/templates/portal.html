@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ryker Room | Unified Multi-Standard Compliance Vault</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-8">
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- Top App Bar -->
+        <header class="flex justify-between items-center border-b border-slate-800 pb-5">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 text-white font-bold text-xl px-3 py-1.5 rounded-lg shadow-lg">R</div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">Ryker Room <span class="text-xs uppercase bg-purple-900/60 text-purple-300 px-2 py-0.5 rounded border border-purple-700 ml-2">Unified Trust Platform</span></h1>
+                    <p class="text-xs text-slate-400">SOC 2 Type II • ISO/IEC 27001:2022 • NIST CSF 2.0</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <!-- Tenant Switcher Dropdown -->
+                <div class="flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5">
+                    <span class="text-xs text-slate-400 font-medium">Tenant:</span>
+                    <select id="tenantSelect" onchange="switchTenant(this.value)" class="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer">
+                        <option value="11111111-1111-1111-1111-111111111111">Acme Audit Client</option>
+                    </select>
+                    <button onclick="openOnboardModal()" class="text-xs bg-slate-800 hover:bg-slate-700 text-blue-400 px-2 py-1 rounded ml-2 transition font-semibold">+ New</button>
+                </div>
+
+                <button onclick="downloadPDF()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-md flex items-center space-x-1.5">
+                    <span>Export Signed Workpaper PDF</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- KPI Metrics Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+                <div class="text-xs text-slate-400 font-medium">AICPA SOC 2 Type II</div>
+                <div class="text-xl font-bold text-blue-400 mt-1" id="soc2Count">3 Criteria Active</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">CC6.1, CC7.1, CC8.1</div>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+                <div class="text-xs text-slate-400 font-medium">ISO/IEC 27001:2022</div>
+                <div class="text-xl font-bold text-purple-400 mt-1">5 Annex A Controls</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Satisfied via Evidence Re-use</div>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+                <div class="text-xs text-slate-400 font-medium">NIST CSF 2.0</div>
+                <div class="text-xl font-bold text-indigo-400 mt-1">4 Subcategories</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Protect (PR) & Detect (DE)</div>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+                <div class="text-xs text-slate-400 font-medium">Evidence Re-use Efficiency</div>
+                <div class="text-xl font-bold text-emerald-400 mt-1">2.67x</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Redundant Audits Eliminated</div>
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Evidence Vault Table -->
+            <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-800 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-sm font-semibold tracking-wide uppercase text-slate-300">Multi-Standard Evidence Vault Ledger</h2>
+                        <p class="text-xs text-slate-400">Cryptographically Sealed & Cross-Mapped</p>
+                    </div>
+                    <button onclick="loadEvidence()" class="text-xs text-blue-400 hover:text-blue-300 font-mono">Refresh Ledger</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950/60 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                            <tr>
+                                <th class="px-4 py-3">SOC 2</th>
+                                <th class="px-4 py-3">Artifact & SHA-256</th>
+                                <th class="px-4 py-3">Cross-Framework Equivalencies</th>
+                                <th class="px-4 py-3">Retention</th>
+                            </tr>
+                        </thead>
+                        <tbody id="evidenceTable" class="divide-y divide-slate-800/60">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="px-5 py-3 border-t border-slate-800/80 bg-slate-950/40 flex justify-between items-center text-xs">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="mono text-slate-400 text-[11px]">Merkle Root: <span id="merkleRoot" class="text-emerald-400 font-semibold">Calculating...</span></span>
+                    </div>
+                    <button onclick="verifyMerkleRoot()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded text-xs transition">Verify Integrity</button>
+                </div>
+            </div>
+
+            <!-- Side Actions -->
+            <div class="space-y-6">
+                <!-- Continuous Drift Simulation -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                    <div>
+                        <h2 class="text-sm font-semibold text-slate-200">Continuous Drift & Alerting</h2>
+                        <p class="text-xs text-slate-400 mt-1">Automated SecOps webhook dispatch</p>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Simulate a telemetry event where branch protection admins are disabled or an MFA exemption is created.
+                    </p>
+                    <div class="grid grid-cols-2 gap-3 pt-1">
+                        <button onclick="simulateDrift('VIOLATION')" class="bg-rose-950 hover:bg-rose-900 text-rose-200 border border-rose-800 py-2 rounded-lg text-xs font-semibold transition">
+                            Simulate Violation
+                        </button>
+                        <button onclick="simulateDrift('RESTORED')" class="bg-emerald-950 hover:bg-emerald-900 text-emerald-200 border border-emerald-800 py-2 rounded-lg text-xs font-semibold transition">
+                            Verify Compliant
+                        </button>
+                    </div>
+                </div>
+
+                <!-- AICPA Deterministic Sampler -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                    <div>
+                        <h2 class="text-sm font-semibold text-slate-200">AICPA Deterministic Sampler</h2>
+                        <p class="text-xs text-slate-400 mt-1">SSAE 18 reproducible testing</p>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Run seeded attribute sampling on PR merge population items:
+                    </p>
+                    <button onclick="runSampler()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 py-2 rounded-lg text-xs font-semibold transition">
+                        Run Deterministic Sample
+                    </button>
+                    <div id="sampleOutput" class="text-[11px] mono text-slate-400 bg-slate-950 p-2.5 rounded border border-slate-800/80 hidden"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onboard Client Modal -->
+    <div id="onboardModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-xl p-6 space-y-4 shadow-2xl">
+            <h3 class="text-base font-bold text-white">Onboard New Audit Client</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Provisions a dedicated multi-tenant boundary, seeds core compliance controls, and initializes an observation ledger.
+            </p>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Company / Organization Name</label>
+                <input id="newTenantName" type="text" placeholder="e.g., Stripe, Vercel, Sentinel AI" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeOnboardModal()" class="px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white transition">Cancel</button>
+                <button onclick="submitNewTenant()" class="bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition">Provision Organization</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTenantId = "11111111-1111-1111-1111-111111111111";
+
+        async function loadTenants() {
+            try {
+                const res = await fetch('/api/v1/tenants');
+                const tenants = await res.json();
+                const sel = document.getElementById('tenantSelect');
+                sel.innerHTML = tenants.map(t => `<option value="${t.id}" ${t.id === currentTenantId ? 'selected' : ''}>${t.name}</option>`).join('');
+            } catch (err) {
+                console.error("Error loading tenants", err);
+            }
+        }
+
+        function switchTenant(tenantId) {
+            currentTenantId = tenantId;
+            loadEvidence();
+        }
+
+        function openOnboardModal() {
+            document.getElementById('onboardModal').classList.remove('hidden');
+        }
+
+        function closeOnboardModal() {
+            document.getElementById('onboardModal').classList.add('hidden');
+        }
+
+        async function submitNewTenant() {
+            const name = document.getElementById('newTenantName').value.trim();
+            if (!name) return alert("Please enter an organization name");
+
+            const res = await fetch('/api/v1/tenants/provision', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                closeOnboardModal();
+                await loadTenants();
+                switchTenant(data.tenant_id);
+            } else {
+                alert("Failed to provision tenant");
+            }
+        }
+
+        async function loadEvidence() {
+            try {
+                const res = await fetch(`/api/v1/evidence?tenant_id=${currentTenantId}`);
+                const data = await res.json();
+                const tbody = document.getElementById('evidenceTable');
+
+                if (!data.artifacts || data.artifacts.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-slate-500 italic">No artifacts recorded yet in this tenant vault.</td></tr>`;
+                    document.getElementById('merkleRoot').innerText = "Empty Ledger";
+                    return;
+                }
+
+                tbody.innerHTML = data.artifacts.map(a => {
+                    const mappingsHtml = (a.mappings || []).map(m => 
+                        `<span class="inline-block bg-purple-950/80 text-purple-300 border border-purple-800/80 px-2 py-0.5 rounded text-[10px] mr-1.5 mb-1">${m.framework}: ${m.code}</span>`
+                    ).join('');
+
+                    return `
+                        <tr class="hover:bg-slate-800/40 transition">
+                            <td class="px-4 py-3 font-semibold text-blue-400 mono">${a.control_code}</td>
+                            <td class="px-4 py-3">
+                                <div class="font-medium text-slate-200">${a.file_name}</div>
+                                <div class="mono text-[11px] text-slate-400">${a.sha256.substring(0, 16)}...</div>
+                            </td>
+                            <td class="px-4 py-3">${mappingsHtml}</td>
+                            <td class="px-4 py-3 mono text-emerald-400">2033-01-01<br/><span class="text-[10px] text-slate-400">(WORM)</span></td>
+                        </tr>
+                    `;
+                }).join('');
+
+                document.getElementById('merkleRoot').innerText = (data.merkle_root || "None").substring(0, 16) + "... (" + data.artifacts.length + " artifacts verified)";
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function verifyMerkleRoot() {
+            const res = await fetch(`/api/v1/evidence/verify-merkle?tenant_id=${currentTenantId}`);
+            const data = await res.json();
+            alert(`Merkle Integrity Attested!\nRoot: ${data.merkle_root}\nLeaves Verified: ${data.artifact_count}\nValid: ${data.valid}`);
+        }
+
+        async function simulateDrift(type) {
+            const res = await fetch(`/api/v1/telemetry/simulate-drift?type=${type}&tenant_id=${currentTenantId}`, { method: 'POST' });
+            const data = await res.json();
+            alert(`Alert Dispatched!\nType: ${data.alert_type}\nDetail: ${data.description}`);
+        }
+
+        async function runSampler() {
+            const res = await fetch(`/api/v1/evidence/sample?sample_size=5&tenant_id=${currentTenantId}`);
+            const data = await res.json();
+            const out = document.getElementById('sampleOutput');
+            out.classList.remove('hidden');
+            out.innerHTML = `
+                <div class="text-emerald-400 font-bold mb-1">AICPA Sample: ${data.sample_size} items from population ${data.population_size}</div>
+                <div>Seed: ${data.sampling_seed_record}</div>
+                <div class="mt-1 text-slate-300">Selected PRs: ${data.selected_sample.map(s => "#" + s.pr_number).join(', ')}</div>
+            `;
+        }
+
+        function downloadPDF() {
+            window.open(`/api/v1/engagements/65162a1d-3c73-4b20-9d0b-3850e94737ec/workpaper.pdf?tenant_id=${currentTenantId}`, '_blank');
+        }
+
+        loadTenants();
+        loadEvidence();
+    </script>
+</body>
+</html>

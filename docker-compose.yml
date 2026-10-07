@@ -1,20 +1,41 @@
+version: '3.8'
+
 services:
-  ryker-db:
-    image: postgres:16-alpine
-    container_name: ryker-db
+  db:
+    image: postgres:15-alpine
+    container_name: ryker_postgres
+    restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: ryker_vault
+      POSTGRES_USER: ryker_admin
+      POSTGRES_PASSWORD: ryker_secure_password
+      POSTGRES_DB: ryker_room
     ports:
       - "5432:5432"
     volumes:
-      - ryker-pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ryker_vault"]
+      test: ["CMD-SHELL", "pg_isready -U ryker_admin -d ryker_room"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ryker_api
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://ryker_admin:ryker_secure_password@db:5432/ryker_room
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+      APP_ENV: production
+    volumes:
+      - ./backend/app:/app/app
+
 volumes:
-  ryker-pgdata:
+  postgres_data:
