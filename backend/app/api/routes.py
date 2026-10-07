@@ -252,7 +252,16 @@ async def github_webhook_receiver(
     request: Request,
     org_id: uuid.UUID = Depends(get_current_org_id),
 ):
-    data = await request.json()
+    raw_body = await request.body()
+    signature = request.headers.get("x-hub-signature-256")
+    
+    if not GitHubWebhookService.verify_signature(raw_body, signature):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid GitHub webhook HMAC SHA-256 signature",
+        )
+
+    data = json.loads(raw_body.decode("utf-8"))
     sealed_result = GitHubWebhookService.process_pull_request_event(
         event_data=data,
         organization_id=org_id,
