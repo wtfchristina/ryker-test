@@ -28,74 +28,74 @@ jobs:
 
     steps:
       - name: Checkout Code
-    uses: actions/checkout@v4
+        uses: actions/checkout@v4
 
-  - name: Set up Python 3.11
-    uses: actions/setup-python@v5
-    with:
-      python-version: "3.11"
-      cache: "pip"
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
 
-  - name: Install Dependencies
-    run: |
-      python -m pip install --upgrade pip
-      pip install "greenlet>=3.0.0" "moto[s3]>=5.0.0" pytest pytest-asyncio httpx
-      pip install -r backend/requirements.txt
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install "greenlet>=3.0.0" "moto[s3]>=5.0.0" pytest pytest-asyncio httpx
+          pip install -r backend/requirements.txt
 
-  - name: Initialize Database Schema
-    env:
-      DATABASE_URL: postgresql+asyncpg://ryker_app_user:SecureClientAppPass123!@localhost:5432/ryker_vault
-      POSTGRES_USER: ryker_app_user
-      POSTGRES_PASSWORD: SecureClientAppPass123!
-      POSTGRES_DB: ryker_vault
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: 5432
-      AWS_DEFAULT_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: testing
-      AWS_SECRET_ACCESS_KEY: testing
-    run: |
-      cd backend
-      python -c "
-      import asyncio
-      from app.core.database import engine
-      from app.models.audit import Base
-      async def init():
-          async with engine.begin() as conn:
-              await conn.run_sync(Base.metadata.create_all)
-      asyncio.run(init())
-      "
+      - name: Initialize Database Schema
+        env:
+          DATABASE_URL: postgresql+asyncpg://ryker_app_user:SecureClientAppPass123!@localhost:5432/ryker_vault
+          POSTGRES_USER: ryker_app_user
+          POSTGRES_PASSWORD: SecureClientAppPass123!
+          POSTGRES_DB: ryker_vault
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: testing
+          AWS_SECRET_ACCESS_KEY: testing
+        run: |
+          cd backend
+          python -c "
+          import asyncio
+          from app.core.database import engine
+          from app.models.audit import Base
+          async def init():
+              async with engine.begin() as conn:
+                  await conn.run_sync(Base.metadata.create_all)
+          asyncio.run(init())
+          "
 
-  - name: Run Pytest Suite
-    env:
-      DATABASE_URL: postgresql+asyncpg://ryker_app_user:SecureClientAppPass123!@localhost:5432/ryker_vault
-      POSTGRES_USER: ryker_app_user
-      POSTGRES_PASSWORD: SecureClientAppPass123!
-      POSTGRES_DB: ryker_vault
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: 5432
-      AWS_DEFAULT_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: testing
-      AWS_SECRET_ACCESS_KEY: testing
-    run: |
-      cd backend
-      pytest -v
+      - name: Run Pytest Suite
+        env:
+          DATABASE_URL: postgresql+asyncpg://ryker_app_user:SecureClientAppPass123!@localhost:5432/ryker_vault
+          POSTGRES_USER: ryker_app_user
+          POSTGRES_PASSWORD: SecureClientAppPass123!
+          POSTGRES_DB: ryker_vault
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: testing
+          AWS_SECRET_ACCESS_KEY: testing
+        run: |
+          cd backend
+          pytest -v
 
-docker-build:
-name: Validate Docker Image Build
-runs-on: ubuntu-latest
-needs: test
+  docker-build:
+    name: Validate Docker Image Build
+    runs-on: ubuntu-latest
+    needs: test
 
-steps:
-  - name: Checkout Code
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-  - name: Set up Docker Buildx
-    uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-  - name: Build Docker API Image
-    uses: docker/build-push-action@v5
-    with:
-      context: .
-      file: backend/Dockerfile
-      push: false
-      tags: ryker-room-api:ci
+      - name: Build Docker API Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: false
+          tags: ryker-room-api:ci
