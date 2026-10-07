@@ -56,7 +56,6 @@ jobs:
           async def setup():
               admin_engine = create_async_engine('$ADMIN_URL')
               async with admin_engine.begin() as conn:
-                  # 1. Ensure non-superuser ryker_app_user exists
                   await conn.execute(text('''
                       DO \$\$
                       BEGIN
@@ -71,15 +70,12 @@ jobs:
                   await conn.execute(text('GRANT ALL PRIVILEGES ON DATABASE ryker_vault TO ryker_app_user'))
                   await conn.execute(text('GRANT ALL ON SCHEMA public TO ryker_app_user'))
                   
-                  # 2. Create tables
                   await conn.run_sync(Base.metadata.create_all)
                   
-                  # 3. Grant table permissions to ryker_app_user
                   await conn.execute(text('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ryker_app_user'))
                   await conn.execute(text('GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ryker_app_user'))
                   await conn.execute(text('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ryker_app_user'))
                   
-                  # 4. Enforce RLS
                   await conn.execute(text('ALTER TABLE engagements ENABLE ROW LEVEL SECURITY'))
                   await conn.execute(text('ALTER TABLE engagements FORCE ROW LEVEL SECURITY'))
                   await conn.execute(text('DROP POLICY IF EXISTS tenant_isolation_policy ON engagements'))
@@ -124,7 +120,7 @@ jobs:
       - name: Build Docker API Image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: backend
           file: backend/Dockerfile
           push: false
           tags: ryker-room-api:ci
