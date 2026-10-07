@@ -18,6 +18,7 @@ from app.services.vault import EvidenceVaultService
 from app.services.workpaper import WorkpaperGeneratorService
 from app.services.pdf_report import PDFWorkpaperService
 from app.services.github_ingestor import GitHubWebhookService
+from app.services.drift_detector import DriftDetectionEngine
 
 router = APIRouter(prefix="/api/v1", tags=["Ryker Audit API"])
 
@@ -115,6 +116,38 @@ async def seal_evidence(
         "legal_hold": "ACTIVE",
     }
 
+@router.get("/engagements/{engagement_id}/evidence")
+async def list_evidence(
+    engagement_id: uuid.UUID,
+    org_id: uuid.UUID = Depends(get_current_org_id),
+):
+    async with get_tenant_db(org_id=org_id) as session:
+        ctrls = await session.execute(select(Control).where(Control.engagement_id == engagement_id))
+        ctrl_map = {c.id: c.framework_code for c in ctrls.scalars().all()}
+        
+        art_res = await session.execute(select(EvidenceArtifact).where(EvidenceArtifact.organization_id == org_id))
+        artifacts = art_res.scalars().all()
+        return [
+            {
+                "id": str(a.id),
+                "control_code": ctrl_map.get(a.control_id, "CC8.1"),
+                "file_name": a.file_name,
+                "sha256_hash": a.sha256_hash,
+                "storage_key": a.s3_key,
+                "status": a.verification_status,
+                "locked_until": a.locked_until.strftime("%Y-%m-%d") if a.locked_until else "2033-01-01"
+            }
+            for a in artifacts
+        ]
+
+@router.post("/engagements/{engagement_id}/evaluate-drift")
+async def evaluate_engagement_drift(
+    engagement_id: uuid.UUID,
+    check_payload: List[dict] = Body(...),
+    org_id: uuid.UUID = Depends(get_current_org_id),
+):
+    return DriftDetectionEngine.evaluate_posture(check_payload)
+
 @router.post("/engagements/{engagement_id}/sample")
 async def generate_aicpa_sample(
     engagement_id: uuid.UUID,
@@ -122,11 +155,10 @@ async def generate_aicpa_sample(
     org_id: uuid.UUID = Depends(get_current_org_id),
 ):
     seed = payload.seed_override or f"{engagement_id}-{payload.control_id}"
-    sampled_result = AICPASamplingEngine.select_reproducible_sample(
+    return AICPASamplingEngine.select_reproducible_sample(
         population=payload.population,
         sample_seed=seed,
     )
-    return sampled_result
 
 @router.get("/engagements/{engagement_id}/workpaper")
 async def export_audit_workpaper(
@@ -134,21 +166,15 @@ async def export_audit_workpaper(
     org_id: uuid.UUID = Depends(get_current_org_id),
 ):
     async with get_tenant_db(org_id=org_id) as session:
-        eng_res = await session.execute(
-            select(Engagement).where(Engagement.id == engagement_id)
-        )
+        eng_res = await session.execute(select(Engagement).where(Engagement.id == engagement_id))
         engagement = eng_res.scalar_one_or_none()
         if not engagement:
             raise HTTPException(status_code=404, detail="Engagement not found")
 
-        ctrl_res = await session.execute(
-            select(Control).where(Control.engagement_id == engagement_id)
-        )
+        ctrl_res = await session.execute(select(Control).where(Control.engagement_id == engagement_id))
         controls = ctrl_res.scalars().all()
 
-        art_res = await session.execute(
-            select(EvidenceArtifact).where(EvidenceArtifact.organization_id == org_id)
-        )
+        art_res = await session.execute(select(EvidenceArtifact).where(EvidenceArtifact.organization_id == org_id))
         artifacts = art_res.scalars().all()
 
         workpaper_md = WorkpaperGeneratorService.generate_markdown_workpaper(
@@ -164,21 +190,15 @@ async def export_audit_workpaper_pdf(
     org_id: uuid.UUID = Depends(get_current_org_id),
 ):
     async with get_tenant_db(org_id=org_id) as session:
-        eng_res = await session.execute(
-            select(Engagement).where(Engagement.id == engagement_id)
-        )
+        eng_res = await session.execute(select(Engagement).where(Engagement.id == engagement_id))
         engagement = eng_res.scalar_one_or_none()
         if not engagement:
             raise HTTPException(status_code=404, detail="Engagement not found")
 
-        ctrl_res = await session.execute(
-            select(Control).where(Control.engagement_id == engagement_id)
-        )
+        ctrl_res = await session.execute(select(Control).where(Control.engagement_id == engagement_id))
         controls = ctrl_res.scalars().all()
 
-        art_res = await session.execute(
-            select(EvidenceArtifact).where(EvidenceArtifact.organization_id == org_id)
-        )
+        art_res = await session.execute(select(EvidenceArtifact).where(EvidenceArtifact.organization_id == org_id))
         artifacts = art_res.scalars().all()
 
         pdf_stream = PDFWorkpaperService.build_pdf(

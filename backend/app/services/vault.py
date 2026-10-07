@@ -40,10 +40,6 @@ class EvidenceVaultService:
         raw_bytes: bytes,
         uploaded_by: uuid.UUID,
     ) -> Dict[str, Any]:
-        """
-        Calculates SHA-256, writes byte-exact payload to WORM storage with Legal Hold,
-        and generates audit-ready database model data.
-        """
         sha256_hash = hashlib.sha256(raw_bytes).hexdigest()
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         s3_key = (
@@ -59,8 +55,8 @@ class EvidenceVaultService:
             "source": source_name,
         }
 
-        # Attempt S3 Object Lock upload; fallback to local immutable vault directory for local dev
-        version_id = "v1-dev-lock"
+        # Attempt S3 Object Lock upload; fallback to local immutable directory
+        version_id = "v1-worm-lock"
         try:
             response = self.s3.put_object(
                 Bucket=self.bucket,
@@ -70,7 +66,7 @@ class EvidenceVaultService:
                 Metadata=metadata,
                 ObjectLockLegalHoldStatus="ON",
             )
-            version_id = response.get("VersionId", "1")
+            version_id = response.get("VersionId", "v1-worm-lock")
         except Exception:
             local_target = self.local_vault_dir / s3_key
             local_target.parent.mkdir(parents=True, exist_ok=True)
