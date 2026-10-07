@@ -15,8 +15,8 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_USER: ryker_app_user
-          POSTGRES_PASSWORD: SecureClientAppPass123!
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: supersecretadminpassword
           POSTGRES_DB: ryker_vault
         ports:
           - 5432:5432
@@ -42,37 +42,56 @@ jobs:
           pip install "greenlet>=3.0.0" "moto[s3]>=5.0.0" pytest pytest-asyncio httpx
           pip install -r backend/requirements.txt
 
-      - name: Initialize Database Schema and RLS
+      - name: Configure Roles and Initialize Schema
         env:
-          DATABASE_URL: postgresql+asyncpg://ryker_app_user:SecureClientAppPass123!@localhost:5432/ryker_vault
-          POSTGRES_USER: ryker_app_user
-          POSTGRES_PASSWORD: SecureClientAppPass123!
-          POSTGRES_DB: ryker_vault
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-          AWS_DEFAULT_REGION: us-east-1
-          AWS_ACCESS_KEY_ID: testing
-          AWS_SECRET_ACCESS_KEY: testing
+          ADMIN_URL: postgresql+asyncpg://postgres:supersecretadminpassword@localhost:5432/ryker_vault
         run: |
           cd backend
           python -c "
           import asyncio
+          from sqlalchemy.ext.asyncio import create_async_engine
           from sqlalchemy import text
-          from app.core.database import engine
           from app.models.audit import Base
 
-          async def init():
-              async with engine.begin() as conn:
+          async def setup():
+              admin_engine = create_async_engine('$ADMIN_URL')
+              async with admin_engine.begin() as conn:
+                  # 1. Ensure non-superuser ryker_app_user exists
+                  await conn.execute(text('''
+                      DO \$\$
+                      BEGIN
+                          IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'ryker_app_user') THEN
+                              CREATE ROLE ryker_app_user WITH LOGIN PASSWORD 'SecureClientAppPass123!' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+                          ELSE
+                              ALTER ROLE ryker_app_user WITH NOSUPERUSER NOCREATEDB NOCREATEROLE;
+                          END IF;
+                      END
+                      \$\$;
+                  '''))
+                  await conn.execute(text('GRANT ALL PRIVILEGES ON DATABASE ryker_vault TO ryker_app_user'))
+                  await conn.execute(text('GRANT ALL ON SCHEMA public TO ryker_app_user'))
+                  
+                  # 2. Create tables
                   await conn.run_sync(Base.metadata.create_all)
+                  
+                  # 3. Grant table permissions to ryker_app_user
+                  await conn.execute(text('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ryker_app_user'))
+                  await conn.execute(text('GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ryker_app_user'))
+                  await conn.execute(text('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ryker_app_user'))
+                  
+                  # 4. Enforce RLS
                   await conn.execute(text('ALTER TABLE engagements ENABLE ROW LEVEL SECURITY'))
                   await conn.execute(text('ALTER TABLE engagements FORCE ROW LEVEL SECURITY'))
                   await conn.execute(text('DROP POLICY IF EXISTS tenant_isolation_policy ON engagements'))
                   await conn.execute(text('''
                       CREATE POLICY tenant_isolation_policy ON engagements
-                          USING (organization_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid)
-                          WITH CHECK (organization_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid)
+                          FOR ALL
+                          TO ryker_app_user
+                          USING (organization_id::text = current_setting('app.current_org_id', true))
+                          WITH CHECK (organization_id::text = current_setting('app.current_org_id', true))
                   '''))
-          asyncio.run(init())
+              await admin_engine.dispose()
+          asyncio.run(setup())
           "
 
       - name: Run Pytest Suite
