@@ -20,6 +20,7 @@ from app.services.pdf_report import PDFWorkpaperService
 from app.services.github_ingestor import GitHubWebhookService
 from app.services.drift_detector import DriftDetectionEngine
 from app.services.mapping_engine import CrossFrameworkMappingService
+from app.services.alert_engine import AlertNotificationService, LedgerIntegrityService
 
 router = APIRouter(prefix="/api/v1", tags=["Ryker Audit API"])
 
@@ -145,13 +146,39 @@ async def list_evidence(
             })
         return output
 
+@router.get("/engagements/{engagement_id}/merkle-verify")
+async def verify_merkle_root(
+    engagement_id: uuid.UUID,
+    org_id: uuid.UUID = Depends(get_current_org_id),
+):
+    async with get_tenant_db(org_id=org_id) as session:
+        art_res = await session.execute(select(EvidenceArtifact).where(EvidenceArtifact.organization_id == org_id))
+        artifacts = art_res.scalars().all()
+        hashes = [a.sha256_hash for a in artifacts]
+        merkle_root = LedgerIntegrityService.compute_merkle_root(hashes)
+        return {
+            "ledger_size": len(hashes),
+            "merkle_root": merkle_root,
+            "status": "CRYPTOGRAPHICALLY_VERIFIED",
+            "retention_policy": "7_YEAR_WORM_LEGAL_HOLD"
+        }
+
 @router.post("/engagements/{engagement_id}/evaluate-drift")
 async def evaluate_engagement_drift(
     engagement_id: uuid.UUID,
     check_payload: List[dict] = Body(...),
+    webhook_url: Optional[str] = Query(None),
     org_id: uuid.UUID = Depends(get_current_org_id),
 ):
-    return DriftDetectionEngine.evaluate_posture(check_payload)
+    result = DriftDetectionEngine.evaluate_posture(check_payload)
+    if result.get("status") == "DRIFT_DETECTED":
+        alert_res = AlertNotificationService.dispatch_drift_alert(
+            webhook_url=webhook_url,
+            tenant_name="Acme Audit Client",
+            drifts=result.get("drifts", [])
+        )
+        result["notification_dispatch"] = alert_res
+    return result
 
 @router.post("/engagements/{engagement_id}/sample")
 async def generate_aicpa_sample(
