@@ -24,3 +24,4 @@ docker compose ps
 # Portal:    http://localhost:8000/portal
 # API Docs:  http://localhost:8000/docs
 
+# Verified branch protection rule
