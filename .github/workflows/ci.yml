@@ -16,8 +16,8 @@ jobs:
         image: postgres:15-alpine
         env:
           POSTGRES_USER: ryker_app_user
-          POSTGRES_PASSWORD: ryker_secure_pass
-          POSTGRES_DB: ryker_compliance
+          POSTGRES_PASSWORD: SecureClientAppPass123!
+          POSTGRES_DB: ryker_vault
         ports:
           - 5432:5432
         options: >-
@@ -44,10 +44,10 @@ jobs:
 
       - name: Run Pytest Suite
         env:
-          DATABASE_URL: postgresql+asyncpg://ryker_app_user:ryker_secure_pass@localhost:5432/ryker_compliance
+          DATABASE_URL: postgresql+asyncpg://ryker_app_user:SecureClientAppPass123!@localhost:5432/ryker_vault
           POSTGRES_USER: ryker_app_user
-          POSTGRES_PASSWORD: ryker_secure_pass
-          POSTGRES_DB: ryker_compliance
+          POSTGRES_PASSWORD: SecureClientAppPass123!
+          POSTGRES_DB: ryker_vault
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
           AWS_DEFAULT_REGION: us-east-1
