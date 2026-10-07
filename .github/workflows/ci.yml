@@ -64,13 +64,13 @@ jobs:
           async def init():
               async with engine.begin() as conn:
                   await conn.run_sync(Base.metadata.create_all)
+                  await conn.execute(text('ALTER TABLE engagements ENABLE ROW LEVEL SECURITY'))
+                  await conn.execute(text('ALTER TABLE engagements FORCE ROW LEVEL SECURITY'))
+                  await conn.execute(text('DROP POLICY IF EXISTS tenant_isolation_policy ON engagements'))
                   await conn.execute(text('''
-                      ALTER TABLE engagements ENABLE ROW LEVEL SECURITY;
-                      ALTER TABLE engagements FORCE ROW LEVEL SECURITY;
-                      DROP POLICY IF EXISTS tenant_isolation_policy ON engagements;
                       CREATE POLICY tenant_isolation_policy ON engagements
                           USING (organization_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid)
-                          WITH CHECK (organization_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
+                          WITH CHECK (organization_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid)
                   '''))
           asyncio.run(init())
           "
