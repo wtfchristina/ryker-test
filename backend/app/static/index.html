@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Ryker Room | Continuous Audit & Compliance Engine</title>
+  <title>Ryker Room | Unified Multi-Standard Compliance Vault</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
@@ -12,9 +12,9 @@
       <div>
         <div class="flex items-center gap-2">
           <span class="text-xl font-bold tracking-tight">Ryker Room</span>
-          <span class="text-[10px] uppercase font-bold tracking-wider bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30">SSAE 18 / WORM</span>
+          <span class="text-[10px] uppercase font-bold tracking-wider bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded border border-purple-500/30">Unified Trust Platform</span>
         </div>
-        <p class="text-xs text-slate-400">Continuous Attestation & Immutable Evidence Vault</p>
+        <p class="text-xs text-slate-400">SOC 2 Type II • ISO/IEC 27001:2022 • NIST CSF 2.0</p>
       </div>
     </div>
     <div class="flex items-center gap-4">
@@ -29,43 +29,40 @@
   </header>
 
   <main class="max-w-7xl mx-auto py-8 px-6 space-y-8">
-    <!-- Active Drift Banner -->
     <div id="driftBanner" class="hidden p-4 rounded-xl border flex items-start justify-between transition-all"></div>
 
-    <!-- Metrics Header -->
+    <!-- Multi-Standard Header Cards -->
     <section class="grid grid-cols-4 gap-4">
       <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl">
-        <div class="text-xs text-slate-400 font-medium">Framework & Period</div>
-        <div class="text-xl font-bold text-slate-100 mt-1">SOC 2 Type II</div>
-        <div class="text-xs text-slate-500 mt-1">2026-01-01 → 2026-12-31</div>
+        <div class="text-xs text-slate-400 font-medium">AICPA SOC 2 Type II</div>
+        <div class="text-xl font-bold text-blue-400 mt-1">3 Criteria Active</div>
+        <div class="text-xs text-slate-500 mt-1">CC6.1, CC7.1, CC8.1</div>
       </div>
       <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl">
-        <div class="text-xs text-slate-400 font-medium">Vault Storage Mode</div>
-        <div class="text-xl font-bold text-emerald-400 mt-1 flex items-center gap-2">
-          <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span> WORM Legal Hold
-        </div>
-        <div class="text-xs text-slate-500 mt-1">Immutable SHA-256 Vault</div>
+        <div class="text-xs text-slate-400 font-medium">ISO/IEC 27001:2022</div>
+        <div id="isoCount" class="text-xl font-bold text-purple-400 mt-1">5 Annex A Controls</div>
+        <div class="text-xs text-slate-500 mt-1">Satisfied via Evidence Re-use</div>
       </div>
       <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl">
-        <div class="text-xs text-slate-400 font-medium">Posture Status</div>
-        <div id="postureMetric" class="text-xl font-bold text-emerald-400 mt-1">COMPLIANT</div>
-        <div class="text-xs text-slate-500 mt-1">Continuous Monitoring Active</div>
+        <div class="text-xs text-slate-400 font-medium">NIST CSF 2.0</div>
+        <div id="nistCount" class="text-xl font-bold text-indigo-400 mt-1">4 Subcategories</div>
+        <div class="text-xs text-slate-500 mt-1">Protect (PR) & Detect (DE)</div>
       </div>
       <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl">
-        <div class="text-xs text-slate-400 font-medium">Evidence Count</div>
-        <div id="artifactCount" class="text-xl font-bold text-blue-400 mt-1">Loading...</div>
-        <div class="text-xs text-slate-500 mt-1">SHA-256 Immutably Sealed</div>
+        <div class="text-xs text-slate-400 font-medium">Evidence Re-use Efficiency</div>
+        <div class="text-xl font-bold text-emerald-400 mt-1">2.67x</div>
+        <div class="text-xs text-slate-500 mt-1">Redundant Audits Eliminated</div>
       </div>
     </section>
 
     <!-- Main Workspace -->
     <div class="grid grid-cols-3 gap-8">
-      <!-- Evidence Matrix (2 Cols) -->
+      <!-- Evidence Matrix with Cross-Framework Badges (2 Cols) -->
       <section class="col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-800 bg-slate-900 flex justify-between items-center">
           <div>
-            <h2 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Sealed Cryptographic Evidence Ledger</h2>
-            <p class="text-xs text-slate-400">Multi-tenant Row-Level Security Enforced</p>
+            <h2 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Multi-Standard Evidence Vault Ledger</h2>
+            <p class="text-xs text-slate-400">Cryptographically Sealed & Cross-Mapped</p>
           </div>
           <button onclick="loadEvidence()" class="text-xs text-blue-400 hover:text-blue-300 font-mono">Refresh Ledger</button>
         </div>
@@ -73,9 +70,9 @@
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-950/80 text-slate-400 font-mono border-b border-slate-800">
               <tr>
-                <th class="px-5 py-3">Control</th>
-                <th class="px-5 py-3">File / Telemetry Artifact</th>
-                <th class="px-5 py-3">SHA-256 Hash</th>
+                <th class="px-5 py-3">SOC 2</th>
+                <th class="px-5 py-3">Artifact & SHA-256</th>
+                <th class="px-5 py-3">Cross-Framework Equivalencies</th>
                 <th class="px-5 py-3">Retention</th>
               </tr>
             </thead>
@@ -86,15 +83,15 @@
         </div>
       </section>
 
-      <!-- Drift Simulator & Live Sampler (1 Col) -->
+      <!-- Drift Simulator & Sampler (1 Col) -->
       <section class="space-y-6">
         <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-4">
           <div class="border-b border-slate-800 pb-3">
             <h3 class="font-bold text-sm text-slate-200">Continuous Drift Simulator</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Test real-time compliance alerting</p>
+            <p class="text-xs text-slate-400 mt-0.5">Real-time posture violation alerts</p>
           </div>
           <p class="text-xs text-slate-300 leading-relaxed">
-            Simulate a telemetry event where a developer disables branch protection admin overrides or creates an MFA exemption.
+            Simulate a telemetry event where branch protection admins are disabled or an MFA exemption is created.
           </p>
           <div class="flex gap-2">
             <button onclick="triggerDriftTest(true)" class="flex-1 py-2 px-3 bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/40 rounded-lg text-xs font-semibold transition">
@@ -109,7 +106,7 @@
         <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-4">
           <div class="border-b border-slate-800 pb-3">
             <h3 class="font-bold text-sm text-slate-200">AICPA Deterministic Sampler</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Reproducible attribute testing</p>
+            <p class="text-xs text-slate-400 mt-0.5">SSAE 18 reproducible testing</p>
           </div>
           <p class="text-xs text-slate-400">Run seeded attribute sampling on 15 PR merge items:</p>
           <button onclick="runSampling()" class="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-mono transition">
@@ -131,21 +128,33 @@
       try {
         const res = await fetch(`/api/v1/engagements/${engagementId}/evidence?tenant_id=${tenantId}`);
         const data = await res.json();
-        document.getElementById("artifactCount").innerText = `${data.length} Artifacts`;
 
         if (!data.length) {
           tbody.innerHTML = `<tr><td colspan="4" class="px-5 py-6 text-center text-slate-500">No artifacts found.</td></tr>`;
           return;
         }
 
-        tbody.innerHTML = data.map(item => `
-          <tr class="hover:bg-slate-800/40">
-            <td class="px-5 py-3.5"><span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 font-bold border border-blue-500/20">${item.control_code}</span></td>
-            <td class="px-5 py-3.5 text-slate-200 font-sans font-medium">${item.file_name}</td>
-            <td class="px-5 py-3.5 text-slate-400">${item.sha256_hash.substring(0, 16)}...</td>
-            <td class="px-5 py-3.5 text-emerald-400 font-semibold">${item.locked_until} (WORM)</td>
-          </tr>
-        `).join('');
+        tbody.innerHTML = data.map(item => {
+          const mappingBadges = item.cross_mappings && item.cross_mappings.length ? item.cross_mappings.map(m => `
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${
+              m.framework === 'ISO_27001' ? 'bg-purple-900/60 text-purple-300 border border-purple-700' : 'bg-indigo-900/60 text-indigo-300 border border-indigo-700'
+            }">
+              ${m.framework === 'ISO_27001' ? 'ISO' : 'NIST'} ${m.code}
+            </span>
+          `).join(' ') : `<span class="text-slate-600 italic">None</span>`;
+
+          return `
+            <tr class="hover:bg-slate-800/40">
+              <td class="px-5 py-3.5"><span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 font-bold border border-blue-500/20">${item.control_code}</span></td>
+              <td class="px-5 py-3.5">
+                <div class="text-slate-200 font-sans font-medium">${item.file_name}</div>
+                <div class="text-[11px] text-slate-400 font-mono">${item.sha256_hash.substring(0, 16)}...</div>
+              </td>
+              <td class="px-5 py-3.5"><div class="flex flex-wrap gap-1">${mappingBadges}</div></td>
+              <td class="px-5 py-3.5 text-emerald-400 font-semibold">${item.locked_until} (WORM)</td>
+            </tr>
+          `;
+        }).join('');
       } catch (err) {
         tbody.innerHTML = `<tr><td colspan="4" class="px-5 py-6 text-center text-red-400">Failed to load evidence.</td></tr>`;
       }
@@ -153,8 +162,6 @@
 
     async function triggerDriftTest(withDrift) {
       const banner = document.getElementById("driftBanner");
-      const metric = document.getElementById("postureMetric");
-
       const payload = withDrift ? [
         { code: "CC8.1", payload: { required_approving_review_count: 0, enforce_admins: false } },
         { code: "CC6.1", payload: { enforcement: "OPTIONAL", exemptions_count: 3 } }
@@ -175,21 +182,17 @@
         banner.className = "p-4 rounded-xl border border-red-500/40 bg-red-950/40 text-red-200 flex flex-col gap-2";
         banner.innerHTML = `
           <div class="flex items-center gap-2 font-bold text-sm">
-            <span class="h-2 w-2 rounded-full bg-red-500"></span> ATTENTION: Control Drift Detected (${result.drifts.length} violations)
+            <span class="h-2 w-2 rounded-full bg-red-500"></span> ATTENTION: Multi-Standard Control Drift Detected (${result.drifts.length} violations)
           </div>
           <div class="text-xs text-red-300 space-y-1">
             ${result.drifts.map(d => `<div>• <b>${d.control_code}</b>: ${d.title} —${d.detail}</div>`).join('')}
           </div>
         `;
         banner.classList.remove("hidden");
-        metric.className = "text-xl font-bold text-red-400 mt-1";
-        metric.innerText = "DRIFT DETECTED";
       } else {
         banner.className = "p-4 rounded-xl border border-emerald-500/40 bg-emerald-950/40 text-emerald-200 flex items-center justify-between";
-        banner.innerHTML = `<div><b>Continuous Telemetry Verified:</b> All ${result.total_evaluated} controls compliant with zero active drifts.</div>`;
+        banner.innerHTML = `<div><b>Continuous Telemetry Verified:</b> All controls compliant across SOC 2, ISO 27001, and NIST CSF.</div>`;
         banner.classList.remove("hidden");
-        metric.className = "text-xl font-bold text-emerald-400 mt-1";
-        metric.innerText = "COMPLIANT";
       }
     }
 

@@ -19,6 +19,7 @@ from app.services.workpaper import WorkpaperGeneratorService
 from app.services.pdf_report import PDFWorkpaperService
 from app.services.github_ingestor import GitHubWebhookService
 from app.services.drift_detector import DriftDetectionEngine
+from app.services.mapping_engine import CrossFrameworkMappingService
 
 router = APIRouter(prefix="/api/v1", tags=["Ryker Audit API"])
 
@@ -127,18 +128,22 @@ async def list_evidence(
         
         art_res = await session.execute(select(EvidenceArtifact).where(EvidenceArtifact.organization_id == org_id))
         artifacts = art_res.scalars().all()
-        return [
-            {
+        
+        output = []
+        for a in artifacts:
+            ctrl_code = ctrl_map.get(a.control_id, "CC8.1")
+            mappings = CrossFrameworkMappingService.get_mappings_for_code(ctrl_code)
+            output.append({
                 "id": str(a.id),
-                "control_code": ctrl_map.get(a.control_id, "CC8.1"),
+                "control_code": ctrl_code,
                 "file_name": a.file_name,
                 "sha256_hash": a.sha256_hash,
                 "storage_key": a.s3_key,
                 "status": a.verification_status,
-                "locked_until": a.locked_until.strftime("%Y-%m-%d") if a.locked_until else "2033-01-01"
-            }
-            for a in artifacts
-        ]
+                "locked_until": a.locked_until.strftime("%Y-%m-%d") if a.locked_until else "2033-01-01",
+                "cross_mappings": mappings,
+            })
+        return output
 
 @router.post("/engagements/{engagement_id}/evaluate-drift")
 async def evaluate_engagement_drift(
