@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router as audit_router
 
@@ -8,7 +9,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Enable CORS for client portal frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,6 +19,10 @@ app.add_middleware(
 
 app.include_router(audit_router)
 
-@app.get("/health")
+@app.get("/portal", include_in_schema=False)
+async def serve_portal():
+    return FileResponse("app/static/index.html")
+
+@app.get("/health", tags=["default"])
 async def health_check():
     return {"status": "HEALTHY", "engine": "Ryker Room Core v1"}

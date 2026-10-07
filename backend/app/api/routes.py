@@ -1,7 +1,7 @@
 import json
 import uuid
-from typing import List
-from fastapi import APIRouter, Body, Depends, Header, HTTPException, Response, status
+from typing import List, Optional
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Query, Request, Response, status
 from sqlalchemy import select
 from app.api.schemas import (
     ControlCreate,
@@ -16,16 +16,27 @@ from app.models.audit import Control, Engagement, EvidenceArtifact
 from app.services.sampler import AICPASamplingEngine
 from app.services.vault import EvidenceVaultService
 from app.services.workpaper import WorkpaperGeneratorService
+from app.services.pdf_report import PDFWorkpaperService
+from app.services.github_ingestor import GitHubWebhookService
 
 router = APIRouter(prefix="/api/v1", tags=["Ryker Audit API"])
 
-def get_current_org_id(x_tenant_id: str = Header(...)) -> uuid.UUID:
+def get_current_org_id(
+    x_tenant_id: Optional[str] = Header(None),
+    tenant_id: Optional[str] = Query(None),
+) -> uuid.UUID:
+    raw_id = x_tenant_id or tenant_id
+    if not raw_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tenant ID missing. Must provide either X-Tenant-ID header or ?tenant_id= query param.",
+        )
     try:
-        return uuid.UUID(x_tenant_id)
+        return uuid.UUID(raw_id)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid X-Tenant-ID header format. Must be UUID.",
+            detail="Invalid Tenant ID format. Must be UUID.",
         )
 
 @router.post("/engagements", response_model=EngagementResponse, status_code=status.HTTP_201_CREATED)
@@ -146,3 +157,64 @@ async def export_audit_workpaper(
             artifacts=artifacts,
         )
         return Response(content=workpaper_md, media_type="text/markdown")
+
+@router.get("/engagements/{engagement_id}/workpaper/pdf")
+async def export_audit_workpaper_pdf(
+    engagement_id: uuid.UUID,
+    org_id: uuid.UUID = Depends(get_current_org_id),
+):
+    async with get_tenant_db(org_id=org_id) as session:
+        eng_res = await session.execute(
+            select(Engagement).where(Engagement.id == engagement_id)
+        )
+        engagement = eng_res.scalar_one_or_none()
+        if not engagement:
+            raise HTTPException(status_code=404, detail="Engagement not found")
+
+        ctrl_res = await session.execute(
+            select(Control).where(Control.engagement_id == engagement_id)
+        )
+        controls = ctrl_res.scalars().all()
+
+        art_res = await session.execute(
+            select(EvidenceArtifact).where(EvidenceArtifact.organization_id == org_id)
+        )
+        artifacts = art_res.scalars().all()
+
+        pdf_stream = PDFWorkpaperService.build_pdf(
+            engagement=engagement,
+            controls=controls,
+            artifacts=artifacts,
+        )
+
+        return Response(
+            content=pdf_stream.getvalue(),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"inline; filename=workpaper_{engagement_id}.pdf"}
+        )
+
+@router.post("/engagements/{engagement_id}/controls/{control_id}/github-webhook")
+async def github_webhook_receiver(
+    engagement_id: uuid.UUID,
+    control_id: uuid.UUID,
+    request: Request,
+    org_id: uuid.UUID = Depends(get_current_org_id),
+):
+    data = await request.json()
+    sealed_result = GitHubWebhookService.process_pull_request_event(
+        event_data=data,
+        organization_id=org_id,
+        engagement_id=engagement_id,
+        control_id=control_id,
+    )
+    if not sealed_result:
+        return {"status": "IGNORED", "reason": "Event was not a merged PR"}
+
+    async with get_tenant_db(org_id=org_id) as session:
+        session.add(sealed_result["artifact_model"])
+
+    return {
+        "status": "SEALED",
+        "sha256": sealed_result["sha256_hash"],
+        "s3_key": sealed_result["s3_key"]
+    }

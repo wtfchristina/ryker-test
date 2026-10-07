@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ryker Room | Auditor Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+  <nav class="border-b border-slate-800 bg-slate-950 px-8 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <div class="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">R</div>
+      <span class="text-xl font-bold tracking-tight">Ryker Room <span class="text-xs uppercase bg-blue-900/60 text-blue-300 px-2 py-0.5 rounded border border-blue-700">Audit Grade</span></span>
+    </div>
+    <div class="text-xs text-slate-400 font-mono">Tenant: 11111111-1111-1111-1111-111111111111</div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto py-10 px-6">
+    <div class="flex justify-between items-end mb-8">
+      <div>
+        <h1 class="text-3xl font-extrabold tracking-tight">SOC 2 Type II Attestation</h1>
+        <p class="text-slate-400 mt-1">Acme Corporation Continuous Evidence Ledger</p>
+      </div>
+      <div class="flex gap-3">
+        <a id="downloadPdf" target="_blank" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium text-sm flex items-center gap-2 transition cursor-pointer">
+          Download Certified PDF
+        </a>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-4 gap-4 mb-8">
+      <div class="bg-slate-800/60 border border-slate-700/60 p-4 rounded-xl">
+        <div class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Status</div>
+        <div class="text-xl font-bold text-emerald-400 mt-1">ACTIVE AUDIT</div>
+      </div>
+      <div class="bg-slate-800/60 border border-slate-700/60 p-4 rounded-xl">
+        <div class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Framework</div>
+        <div class="text-xl font-bold text-slate-200 mt-1">SOC 2 Type II</div>
+      </div>
+      <div class="bg-slate-800/60 border border-slate-700/60 p-4 rounded-xl">
+        <div class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Vault Integrity</div>
+        <div class="text-xl font-bold text-blue-400 mt-1">SHA-256 SEALED</div>
+      </div>
+      <div class="bg-slate-800/60 border border-slate-700/60 p-4 rounded-xl">
+        <div class="text-slate-400 text-xs font-semibold uppercase tracking-wider">WORM Lock</div>
+        <div class="text-xl font-bold text-amber-400 mt-1">LEGAL HOLD ON</div>
+      </div>
+    </div>
+
+    <!-- Evidence Matrix -->
+    <div class="bg-slate-800/40 border border-slate-700 rounded-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-700/80 bg-slate-800/60 flex justify-between items-center">
+        <h2 class="font-semibold text-slate-200">Sealed Evidence Ledger (CC8.1)</h2>
+        <span class="text-xs text-slate-400 font-mono">1 Item Verified</span>
+      </div>
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-900/60 text-slate-400 font-mono text-xs uppercase border-b border-slate-700">
+          <tr>
+            <th class="px-6 py-3">File Name</th>
+            <th class="px-6 py-3">Control</th>
+            <th class="px-6 py-3">Cryptographic Hash</th>
+            <th class="px-6 py-3">Retention</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-700/50">
+          <tr>
+            <td class="px-6 py-4 font-mono font-medium text-blue-400">branch_protection_rules.json</td>
+            <td class="px-6 py-4"><span class="px-2 py-0.5 rounded text-xs bg-slate-700 font-mono">CC8.1</span></td>
+            <td class="px-6 py-4 font-mono text-xs text-slate-300">d8a89f7ae2590230...</td>
+            <td class="px-6 py-4 text-emerald-400 text-xs font-semibold">Locked 2033</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    const engagementId = "65162a1d-3c73-4b20-9d0b-3850e94737ec";
+    const tenantId = "11111111-1111-1111-1111-111111111111";
+    document.getElementById("downloadPdf").href = `/api/v1/engagements/${engagementId}/workpaper/pdf?tenant_id=${tenantId}`;
+  </script>
+</body>
+</html>
