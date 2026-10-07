@@ -1,10 +1,14 @@
-name: Ryker Room CI
+name: Ryker Room CI/CD
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   test:
@@ -42,20 +46,20 @@ jobs:
           pip install "greenlet>=3.0.0" "moto[s3]>=5.0.0" pytest pytest-asyncio httpx
           pip install -r backend/requirements.txt
 
-      - name: Configure Roles and Initialize Schema
+      - name: Configure Roles and Run Alembic Migrations
         env:
           ADMIN_URL: postgresql+asyncpg://postgres:supersecretadminpassword@localhost:5432/ryker_vault
+          DATABASE_URL: postgresql+asyncpg://postgres:supersecretadminpassword@localhost:5432/ryker_vault
         run: |
           cd backend
           python -c "
           import asyncio
           from sqlalchemy.ext.asyncio import create_async_engine
           from sqlalchemy import text
-          from app.models.audit import Base
 
-          async def setup():
-              admin_engine = create_async_engine('$ADMIN_URL')
-              async with admin_engine.begin() as conn:
+          async def init_roles():
+              engine = create_async_engine('$ADMIN_URL')
+              async with engine.begin() as conn:
                   await conn.execute(text('''
                       DO \$\$
                       BEGIN
@@ -69,25 +73,24 @@ jobs:
                   '''))
                   await conn.execute(text('GRANT ALL PRIVILEGES ON DATABASE ryker_vault TO ryker_app_user'))
                   await conn.execute(text('GRANT ALL ON SCHEMA public TO ryker_app_user'))
-                  
-                  await conn.run_sync(Base.metadata.create_all)
-                  
+                  await conn.execute(text('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ryker_app_user'))
+                  await conn.execute(text('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ryker_app_user'))
+              await engine.dispose()
+          asyncio.run(init_roles())
+          "
+          alembic upgrade head
+          python -c "
+          import asyncio
+          from sqlalchemy.ext.asyncio import create_async_engine
+          from sqlalchemy import text
+
+          async def grant_permissions():
+              engine = create_async_engine('$ADMIN_URL')
+              async with engine.begin() as conn:
                   await conn.execute(text('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ryker_app_user'))
                   await conn.execute(text('GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ryker_app_user'))
-                  await conn.execute(text('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ryker_app_user'))
-                  
-                  await conn.execute(text('ALTER TABLE engagements ENABLE ROW LEVEL SECURITY'))
-                  await conn.execute(text('ALTER TABLE engagements FORCE ROW LEVEL SECURITY'))
-                  await conn.execute(text('DROP POLICY IF EXISTS tenant_isolation_policy ON engagements'))
-                  await conn.execute(text('''
-                      CREATE POLICY tenant_isolation_policy ON engagements
-                          FOR ALL
-                          TO ryker_app_user
-                          USING (organization_id::text = current_setting('app.current_org_id', true))
-                          WITH CHECK (organization_id::text = current_setting('app.current_org_id', true))
-                  '''))
-              await admin_engine.dispose()
-          asyncio.run(setup())
+              await engine.dispose()
+          asyncio.run(grant_permissions())
           "
 
       - name: Run Pytest Suite
@@ -106,7 +109,7 @@ jobs:
           pytest -v
 
   docker-build:
-    name: Validate Docker Image Build
+    name: Build & Publish Container Image
     runs-on: ubuntu-latest
     needs: test
 
@@ -117,10 +120,20 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker API Image
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: backend
           file: backend/Dockerfile
-          push: false
-          tags: ryker-room-api:ci
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/ryker-room-api:latest
+            ghcr.io/${{ github.repository_owner }}/ryker-room-api:${{ github.sha }}
