@@ -92,22 +92,6 @@ jobs:
               await engine.dispose()
           asyncio.run(grant_permissions())
           "
-
-      - name: Start Moto S3 Server
-    run: |
-      moto_server s3 -p 4566 &
-      for i in {1..30}; do
-        curl -s http://127.0.0.1:4566 > /dev/null && break || sleep 1
-      done
-
-      - name: Start Moto S3 Mock Server
-  run: |
-    pip install "moto[s3,server]"
-    moto_server s3 -p 4566 &
-    for i in {1..30}; do
-      curl -s http://127.0.0.1:4566 > /dev/null && break || sleep 1
-    done
-
 - name: Run Pytest Suite
         env:
           DATABASE_URL: postgresql+asyncpg://ryker_app_user:SecureClientAppPass123!@localhost:5432/ryker_vault
@@ -120,9 +104,13 @@ jobs:
           AWS_ACCESS_KEY_ID: testing
           AWS_SECRET_ACCESS_KEY: testing
         S3_ENDPOINT_URL: http://127.0.0.1:4566
-        run: |
-          cd backend
-          pytest -v
+        pip install "moto[s3,server]"
+        moto_server s3 -p 4566 &
+        for i in {1..30}; do
+          curl -s http://127.0.0.1:4566 > /dev/null && break || sleep 1
+        done
+        cd backend
+        pytest -v
 
   docker-build:
     name: Build & Publish Container Image
