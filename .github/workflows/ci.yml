@@ -105,10 +105,17 @@ jobs:
           AWS_SECRET_ACCESS_KEY: testing
         S3_ENDPOINT_URL: http://127.0.0.1:4566
         pip install "moto[s3,server]"
-        moto_server s3 -p 4566 &
+        nohup moto_server s3 -H 0.0.0.0 -p 4566 > /tmp/moto.log 2>&1 &
         for i in {1..30}; do
-          curl -s http://127.0.0.1:4566 > /dev/null && break || sleep 1
+          if curl -s http://127.0.0.1:4566 > /dev/null; then
+            echo "Moto server is responding"
+            break
+          fi
+          echo "Waiting for Moto..."
+          sleep 1
         done
+        echo "=== Moto Log Preview ==="
+        head -n 25 /tmp/moto.log || true
         cd backend
         pytest -v
 
