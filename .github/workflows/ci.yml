@@ -92,7 +92,7 @@ jobs:
               await engine.dispose()
           asyncio.run(grant_permissions())
           "
-- name: Run Pytest Suite
+      - name: Run Pytest Suite
         env:
           DATABASE_URL: postgresql+asyncpg://ryker_app_user:SecureClientAppPass123!@localhost:5432/ryker_vault
           POSTGRES_USER: ryker_app_user
@@ -103,21 +103,21 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
           AWS_ACCESS_KEY_ID: testing
           AWS_SECRET_ACCESS_KEY: testing
-        S3_ENDPOINT_URL: http://127.0.0.1:4566
-        pip install "moto[s3,server]"
-        nohup moto_server s3 -H 0.0.0.0 -p 4566 > /tmp/moto.log 2>&1 &
-        for i in {1..30}; do
-          if curl -s http://127.0.0.1:4566 > /dev/null; then
-            echo "Moto server is responding"
-            break
-          fi
-          echo "Waiting for Moto..."
-          sleep 1
-        done
-        echo "=== Moto Log Preview ==="
-        head -n 25 /tmp/moto.log || true
-        cd backend
-        pytest -v
+          S3_ENDPOINT_URL: http://127.0.0.1:4566
+        run: |
+          pip install "moto[s3,server]"
+          nohup moto_server s3 -H 0.0.0.0 -p 4566 > /tmp/moto.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -s http://127.0.0.1:4566 > /dev/null; then
+              echo "Moto server is responding"
+              break
+            fi
+            sleep 1
+          done
+          echo "=== Moto Log Preview ==="
+          head -n 25 /tmp/moto.log || true
+          cd backend
+          pytest -v
 
   docker-build:
     name: Build & Publish Container Image
