@@ -93,7 +93,14 @@ jobs:
           asyncio.run(grant_permissions())
           "
 
-      - name: Run Pytest Suite
+      - name: Start Moto S3 Server
+    run: |
+      moto_server s3 -p 4566 &
+      for i in {1..30}; do
+        curl -s http://127.0.0.1:4566 > /dev/null && break || sleep 1
+      done
+
+  - name: Run Pytest Suite
         env:
           DATABASE_URL: postgresql+asyncpg://ryker_app_user:SecureClientAppPass123!@localhost:5432/ryker_vault
           POSTGRES_USER: ryker_app_user
