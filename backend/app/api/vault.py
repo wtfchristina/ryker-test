@@ -53,7 +53,7 @@ async def ingest_evidence_artifact(
             )
 
         s3_bucket, s3_key, s3_version_id, sha256_hash, file_size_bytes = (
-            await storage_service.save_artifact_stream(
+            await s3_storage_service.save_artifact_stream(
                 tenant_id=str(org_id), control_id=str(control_id), file=file
             )
         )
