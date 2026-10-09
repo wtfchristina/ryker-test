@@ -25,7 +25,6 @@ class S3StorageService:
 
     async def ensure_bucket_exists(self):
         """Ensures bucket exists with Object Lock enabled for WORM compliance."""
-        await self.ensure_bucket_exists()
         async with self._get_client() as s3:
             try:
                 await s3.head_bucket(Bucket=self.bucket)
