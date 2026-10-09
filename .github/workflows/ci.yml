@@ -106,7 +106,7 @@ jobs:
           S3_ENDPOINT_URL: http://127.0.0.1:4566
         run: |
           pip install "moto[s3,server]"
-          nohup moto_server s3 -H 0.0.0.0 -p 4566 > /tmp/moto.log 2>&1 &
+          nohup moto_server -H 0.0.0.0 -p 4566 > /tmp/moto.log 2>&1 &
           for i in $(seq 1 30); do
             if curl -s http://127.0.0.1:4566 > /dev/null; then
               echo "Moto server is responding"
