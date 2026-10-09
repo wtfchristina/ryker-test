@@ -3,6 +3,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router as audit_router
 
+from app.api.vault import router as vault_router
 app = FastAPI(
     title="Ryker Room Audit Engine",
     description="Auditor-grade evidence ingestion and continuous attestation platform",
@@ -26,3 +27,5 @@ async def serve_portal():
 @app.get("/health", tags=["default"])
 async def health_check():
     return {"status": "HEALTHY", "engine": "Ryker Room Core v1"}
+
+app.include_router(vault_router)
