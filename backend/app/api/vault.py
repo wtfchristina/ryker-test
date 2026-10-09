@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Header
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from sqlalchemy import select
 
 from app.core.database import get_tenant_db
@@ -208,17 +208,20 @@ async def download_artifact(
                 detail=f"Evidence artifact {artifact_id} not found.",
             )
 
-        file_path = storage_service.root_dir / artifact.s3_key
-        if not file_path.exists():
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Underlying artifact file missing from storage volume.",
-            )
-
+        # Integrity verification against S3 WORM metadata
         if not await s3_storage_service.verify_file_integrity(artifact.s3_key, artifact.sha256_hash):
             raise HTTPException(
                 status_code=status.HTTP_412_PRECONDITION_FAILED,
                 detail="Artifact failed cryptographic validation before egress.",
+            )
+
+        # Fetch artifact payload from S3
+        try:
+            file_bytes = await s3_storage_service.get_artifact(artifact.s3_key)
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Underlying artifact file missing from storage volume.",
             )
 
         # Audit Event Logging
@@ -237,10 +240,11 @@ async def download_artifact(
             "ETag": f'"{artifact.sha256_hash}"',
             "X-Content-SHA256": artifact.sha256_hash,
             "X-WORM-Compliant": "true",
+            "Content-Disposition": f'attachment; filename="{artifact.file_name}"',
         }
-        return FileResponse(
-            path=file_path,
-            filename=artifact.file_name,
+
+        return Response(
+            content=file_bytes,
             media_type="application/octet-stream",
             headers=headers,
         )

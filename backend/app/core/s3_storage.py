@@ -99,4 +99,10 @@ class S3StorageService:
                 "RetainUntilDate": res.get("ObjectLockRetainUntilDate"),
             }
 
+    async def get_artifact(self, s3_key: str) -> bytes:
+        """Retrieves artifact bytes directly from S3 bucket."""
+        async with self._get_client() as s3:
+            res = await s3.get_object(Bucket=self.bucket, Key=s3_key)
+            return await res["Body"].read()
+
 s3_storage_service = S3StorageService()
