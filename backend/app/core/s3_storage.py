@@ -38,6 +38,7 @@ class S3StorageService:
     async def save_artifact_stream(
         self, tenant_id: str, control_id: str, file: UploadFile, retention_days: int = 365
     ) -> Tuple[str, str, str, str, int]:
+        await self.ensure_bucket_exists()
         """
         Streams file to S3 with inline SHA-256 calculation and applies WORM Object Lock.
         Returns: (s3_bucket, s3_key, s3_version_id, sha256_hash, file_size_bytes)
